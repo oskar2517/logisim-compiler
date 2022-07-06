@@ -1,0 +1,16 @@
+var a;
+var b;
+
+a = 12;
+b = 5;
+
+var i;
+i = 0;
+while i < b {
+    if (a * i) - (((a * i) / b) * b) == 1 {
+        show i;
+        exit;
+    }
+
+    i = i + 1;
+}
