@@ -1,0 +1,20 @@
+var n;
+n = 6;
+
+var a;
+a = 0;
+var b;
+b = 1;
+var tmp;
+
+var i;
+i = 0;
+while i < n {
+    tmp = a + b;
+    a = b;
+    b = tmp;
+
+    i = i + 1;
+}
+
+show a;
