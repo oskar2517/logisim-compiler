@@ -1,0 +1,25 @@
+var a;
+var b;
+
+a = 60;
+b = 96;
+
+if a == 0 {
+    show b;
+    exit;
+}
+
+if b == 0 {
+    show a;
+    exit;
+}
+
+while a != b {
+    if a > b {
+        a = a - b;
+    } else {
+        b = b - a;
+    }
+}
+
+show a;

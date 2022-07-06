@@ -1,0 +1,13 @@
+var n;
+n = 5;
+
+var p;
+p = 1;
+var j;
+j = 1;
+while j < n + 1 {
+    p = p * j;
+    j = j + 1;
+}
+
+show p;
