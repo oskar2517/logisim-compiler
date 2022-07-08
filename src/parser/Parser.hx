@@ -124,11 +124,27 @@ class Parser {
             case Integer:
                 parseInteger();
             case Ident:
-                parseIdent();
+                parseVariableAcceess();
             default:
                 error('Unexpected token type ${currentToken.type}, expected expression.');
                 null;
         }
+    }
+
+    function parseVariableAcceess():VariableAccessNode {
+        var left:ExpressionNode = parseIdent();
+
+        while (currentToken.type == LBrack) {
+            nextToken();
+
+            final index = parseExpression();
+            expectToken(RBrack);
+            nextToken();
+
+            left = new ArrayAccessNode(left, index);
+        }
+
+        return new VariableAccessNode(left);
     }
 
     function parseIdent():IdentNode {
@@ -160,23 +176,45 @@ class Parser {
         nextToken();
         final name = currentToken.literal;
         nextToken();
+        final size = if (currentToken.type == Colon) {
+            nextToken();
+            expectToken(Integer);
+            final size = Std.parseInt(currentToken.literal);
+            nextToken();
+
+            size;
+        } else {
+            1;
+        }
         expectToken(Semicolon);
         nextToken();
 
-        return new VariableDeclarationNode(name);
+        return new VariableDeclarationNode(name, size);
     }
 
-    function parseVariableAssign():VariableAssignNode {
+    function parseVariableAssign():Node {
         expectToken(Ident);
-        final name = currentToken.literal;
-        nextToken();
-        expectToken(Assign);
-        nextToken();
-        final value = parseExpression();
-        expectToken(Semicolon);
-        nextToken();
 
-        return new VariableAssignNode(name, value);
+        return if (lexer.peekToken().type == Assign) {
+            final name = currentToken.literal;
+            nextToken();
+            expectToken(Assign);
+            nextToken();
+            final value = parseExpression();
+            expectToken(Semicolon);
+            nextToken();
+    
+            new VariableAssignNode(name, value);
+        } else {
+            final target = parseVariableAcceess().value;
+            expectToken(Assign);
+            nextToken();
+            final value = parseExpression();
+            expectToken(Semicolon);
+            nextToken();
+
+            new ArrayAssignNode(target, value);
+        }
     }
 
     function parseBlock():BlockNode {

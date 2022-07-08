@@ -72,6 +72,16 @@ class Lexer {
         }
     }
 
+    public function peekToken():Token {
+        final lastPosition = position;
+        final lastChar = currentChar;
+        final token = readToken();
+        position = lastPosition;
+        currentChar = lastChar;
+
+        return token;
+    }
+
     public function readToken():Token {
         readChar();
         eatWhitespace();
@@ -83,6 +93,8 @@ class Lexer {
             case "}": new Token(RBrace, currentChar);
             case "(": new Token(LParen, currentChar);
             case ")": new Token(RParen, currentChar);
+            case "[": new Token(LBrack, currentChar);
+            case "]": new Token(RBrack, currentChar);
             case "+": new Token(Plus, currentChar);
             case "-": new Token(Minus, currentChar);
             case "*": new Token(Asterisk, currentChar);

@@ -8,6 +8,8 @@ enum TokenType {
     RParen;
     LBrace;
     RBrace;
+    LBrack;
+    RBrack;
 
     Plus;
     Minus;
@@ -25,6 +27,7 @@ enum TokenType {
     Var;
     Show;
     Exit;
+    Array;
 
     Semicolon;
     Colon;

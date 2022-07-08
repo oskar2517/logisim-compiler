@@ -1,4 +1,4 @@
-package compiler.analysis.constant;
+package compiler;
 
 class ConstantPool {
 
@@ -9,22 +9,16 @@ class ConstantPool {
         this.startOffset = startOffset;
     }
 
-    public function getAddressOfConstant(constant:Int):Int {
+    public function addConstant(constant:Int) {
         for (i => c in constants) {
             if (c == constant) {
                 return i + startOffset;
             }
         }
 
-        return -1;
-    }
-
-    public function addConstant(constant:Int) {
-        if (getAddressOfConstant(constant) != -1) {
-            return;
-        }
-
         constants.push(constant);
+
+        return constants.length - 1 + startOffset;
     }
 
     public function getSize():Int {
@@ -36,6 +30,7 @@ class ConstantPool {
 
         s.writeComment("--- constant pool start ---");
         for (i => c in constants) {
+            s.writeComment(Std.string(i + startOffset));
             s.writeInteger(c);
         }
         s.writeComment("--- constant pool end ---");

@@ -3,6 +3,14 @@ package visitor;
 import ast.*;
 
 class BaseVisitor implements Visitor {
+
+    public function visitArrayAccess(node:ArrayAccessNode) {
+        
+    }
+
+    public function visitArrayAssign(node:ArrayAssignNode) {
+        
+    }
     
     public function visitBinaryExpression(node:BinaryExpressionNode) {
 
@@ -34,6 +42,10 @@ class BaseVisitor implements Visitor {
 
     public function visitShow(node:ShowNode) {
 
+    }
+
+    public function visitVariableAccess(node:VariableAccessNode) {
+        
     }
 
     public function visitVariableAssign(node:VariableAssignNode) {

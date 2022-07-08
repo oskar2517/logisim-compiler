@@ -4,6 +4,10 @@ import ast.*;
 
 interface Visitor {
 
+    function visitArrayAccess(node:ArrayAccessNode):Void;
+
+    function visitArrayAssign(node:ArrayAssignNode):Void;
+
     function visitBinaryExpression(node:BinaryExpressionNode):Void;
 
     function visitBlock(node:BlockNode):Void;
@@ -19,6 +23,8 @@ interface Visitor {
     function visitInteger(node:IntegerNode):Void;
 
     function visitShow(node:ShowNode):Void;
+
+    function visitVariableAccess(node:VariableAccessNode):Void;
 
     function visitVariableAssign(node:VariableAssignNode):Void;
     

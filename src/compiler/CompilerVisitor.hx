@@ -3,8 +3,6 @@ package compiler;
 import util.Error.error;
 import compiler.analysis.name.SymbolTable;
 import compiler.analysis.name.NameAnalysisVisitor;
-import compiler.analysis.constant.ConstantsCollectorVisitor;
-import compiler.analysis.constant.ConstantPool;
 import ast.*;
 import visitor.BaseVisitor;
 
@@ -30,11 +28,6 @@ class CompilerVisitor extends BaseVisitor {
     override function visitFile(node:FileNode) {
         fileOutput.writeInstruction("jmp", "program");
 
-        final constantsCollector = new ConstantsCollectorVisitor(fileOutput.length);
-        node.accept(constantsCollector);
-        constantPool = constantsCollector.constantPool;
-        fileOutput.writeOutput(constantPool.toAssembly());
-
         fileOutput.writeComment("--- stack start ---");
         stack = new Stack(fileOutput.length);
         for (_ in 0...20) {
@@ -47,9 +40,13 @@ class CompilerVisitor extends BaseVisitor {
         symbolTable = nameAnalysis.symbolTable;
         fileOutput.writeOutput(symbolTable.toAssembly());
 
+        constantPool = new ConstantPool(fileOutput.length);
+
         for (n in node.nodes) {
             n.accept(this);
         }
+
+        fileOutput.writeOutput(constantPool.toAssembly());
 
         program.writeInstruction("hlt");
         fileOutput.writeComment("--- program start ---");
@@ -103,7 +100,7 @@ class CompilerVisitor extends BaseVisitor {
     }
 
     override function visitInteger(node:IntegerNode) {
-        final address = constantPool.getAddressOfConstant(node.value);
+        final address = constantPool.addConstant(node.value);
 
         nextStack();
         program.writeInstruction("lda", address);
@@ -157,8 +154,38 @@ class CompilerVisitor extends BaseVisitor {
         final address = symbolTable.lookup(node.name);
 
         nextStack();
-        program.writeInstruction("lda", address);
+        program.writeInstruction("lda", constantPool.addConstant(address));
         program.writeInstruction("sta", stack.address);
+    }
+
+    override function visitVariableAccess(node:VariableAccessNode) {
+        node.value.accept(this);
+
+        program.writeInstruction("ldd", stack.address);
+        program.writeInstruction("sta", stack.address);
+    }
+
+    override function visitArrayAccess(node:ArrayAccessNode) {
+        node.target.accept(this);
+        final targetAddress = stack.address;
+
+        node.index.accept(this);
+
+        program.writeInstruction("lda", targetAddress);
+        program.writeInstruction("add", stack.address);
+        previousStack();
+        previousStack();
+        program.writeInstruction("sta", stack.address);
+    }
+
+    override function visitArrayAssign(node:ArrayAssignNode) {
+        node.target.accept(this);
+        final targetAddress = stack.address;
+
+        node.value.accept(this);
+
+        previousStack();
+        program.writeInstruction("stt", targetAddress);
     }
 
     override function visitIf(node:IfNode) {

@@ -22,7 +22,7 @@ class NameAnalysisVisitor extends BaseVisitor {
         if (symbolTable.exists(node.name)) {
             error('Re-declaration of variable ${node.name}.');
         }
-        symbolTable.enter(node.name);
+        symbolTable.enter(node.name, node.size);
     }
 
     override function visitBlock(node:BlockNode) {

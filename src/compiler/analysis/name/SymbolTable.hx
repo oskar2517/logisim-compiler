@@ -6,15 +6,15 @@ class SymbolTable {
 
     final startOffset:Int;
     var symbolIndex = 0;
-    final symbols:StringMap<Int> = new StringMap();
+    final symbols:StringMap<Symbol> = new StringMap();
 
     public function new(startOffset:Int) {
         this.startOffset = startOffset;
     }
 
-    public function enter(name:String) {
-        symbols.set(name, symbolIndex);
-        symbolIndex++; 
+    public function enter(name:String, size:Int) {
+        symbols.set(name, new Symbol(symbolIndex, size));
+        symbolIndex += size; 
     }
 
     public function exists(name:String):Bool {
@@ -22,7 +22,7 @@ class SymbolTable {
     }
 
     public function lookup(name:String):Int {
-        return symbols.get(name) + startOffset;
+        return symbols.get(name).symbolIndex + startOffset;
     }
 
     public function getSize():Int {
@@ -33,9 +33,11 @@ class SymbolTable {
         final s = new Output();
 
         s.writeComment("--- symbol table start ---");
-        for (name => _ in symbols) {
-            s.writeComment(name);
-            s.writeInteger(0);
+        for (name => symbol in symbols) {
+            s.writeComment('$name - ${symbol.symbolIndex + startOffset}');
+            for (_ in 0...symbol.size) {
+                s.writeInteger(0);
+            }
         }
         s.writeComment("--- symbol table end ---");
 

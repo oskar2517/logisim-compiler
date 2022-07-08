@@ -6,7 +6,8 @@ private final keywords = [
     "while" => TokenType.While,
     "var" => TokenType.Var,
     "show" => TokenType.Show,
-    "exit" => TokenType.Exit
+    "exit" => TokenType.Exit,
+    "array" => TokenType.Array
 ];
 
 function isKeyword(ident:String):Bool {
