@@ -1,28 +1,31 @@
 package compiler.analysis.name;
 
-import haxe.ds.StringMap;
-
 class SymbolTable {
 
     final startOffset:Int;
     var symbolIndex = 0;
-    final symbols:StringMap<Symbol> = new StringMap();
+    final symbols:Array<Symbol> = [];
+    final keys:Array<String> = [];
+
 
     public function new(startOffset:Int) {
         this.startOffset = startOffset;
     }
 
     public function enter(name:String, size:Int) {
-        symbols.set(name, new Symbol(symbolIndex, size));
+        symbols.push(new Symbol(symbolIndex, size));
+        keys.push(name);
         symbolIndex += size; 
     }
 
     public function exists(name:String):Bool {
-        return symbols.exists(name);
+        return keys.contains(name);
     }
 
     public function lookup(name:String):Int {
-        return symbols.get(name).symbolIndex + startOffset;
+        final index = Lambda.findIndex(keys, key -> key == name);
+
+        return symbols[index].symbolIndex + startOffset;
     }
 
     public function getSize():Int {
@@ -33,8 +36,8 @@ class SymbolTable {
         final s = new Output();
 
         s.writeComment("--- symbol table start ---");
-        for (name => symbol in symbols) {
-            s.writeComment('$name - ${symbol.symbolIndex + startOffset}');
+        for (i => symbol in symbols) {
+            s.writeComment('${keys[i]} - ${symbol.symbolIndex + startOffset}');
             for (_ in 0...symbol.size) {
                 s.writeInteger(0);
             }

@@ -15,10 +15,16 @@ class CompilerVisitor extends BaseVisitor {
     public final fileOutput = new Output();
     var labelIndex = 0;
 
+    var stackOffset = 0;
+
     public function new() {}
 
     function nextStack() {
         stack = stack.next();
+
+        if (stack.address > stackOffset + 20) {
+            error("Stack overflow.");
+        }
     }
 
     function previousStack() {
@@ -28,6 +34,7 @@ class CompilerVisitor extends BaseVisitor {
     override function visitFile(node:FileNode) {
         fileOutput.writeInstruction("jmp", "program");
 
+        stackOffset = fileOutput.length;
         fileOutput.writeComment("--- stack start ---");
         stack = new Stack(fileOutput.length);
         for (_ in 0...20) {
@@ -53,6 +60,8 @@ class CompilerVisitor extends BaseVisitor {
         fileOutput.writeLabel("program");
         fileOutput.writeOutput(program);
         fileOutput.writeComment("--- program end ---");
+
+        trace(stack.address - stackOffset);
     }
 
     override function visitBlock(node:BlockNode) {
@@ -65,6 +74,7 @@ class CompilerVisitor extends BaseVisitor {
         node.expression.accept(this);
 
         program.writeInstruction("lda", stack.address);
+        previousStack();
         program.writeInstruction("mao");
     }
 
@@ -114,6 +124,31 @@ class CompilerVisitor extends BaseVisitor {
 
         program.writeInstruction("lda", stack.address);
         program.writeInstruction("sta", address);
+        previousStack();
+    }
+
+    override function visitArrayAccess(node:ArrayAccessNode) {
+        node.target.accept(this);
+        final targetAddress = stack.address;
+
+        node.index.accept(this);
+
+        program.writeInstruction("lda", targetAddress);
+        program.writeInstruction("add", stack.address);
+        previousStack();
+        program.writeInstruction("sta", stack.address);
+    }
+
+    override function visitArrayAssign(node:ArrayAssignNode) {
+        node.target.accept(this);
+        final targetAddress = stack.address;
+
+        node.value.accept(this);
+
+        program.writeInstruction("lda", stack.address);
+        previousStack();
+        previousStack();
+        program.writeInstruction("stt", targetAddress);
     }
 
     function generateCondition(expression:ExpressionNode, jumpLabel:Int) {
@@ -148,6 +183,9 @@ class CompilerVisitor extends BaseVisitor {
                 program.writeInstruction("brl", 'L$jumpLabel');
             default: error('Operation ${binaryExpression.operation} not supported in conditions.');
         }
+
+        previousStack();
+        previousStack();
     }
 
     override function visitIdent(node:IdentNode) {
@@ -163,29 +201,6 @@ class CompilerVisitor extends BaseVisitor {
 
         program.writeInstruction("ldd", stack.address);
         program.writeInstruction("sta", stack.address);
-    }
-
-    override function visitArrayAccess(node:ArrayAccessNode) {
-        node.target.accept(this);
-        final targetAddress = stack.address;
-
-        node.index.accept(this);
-
-        program.writeInstruction("lda", targetAddress);
-        program.writeInstruction("add", stack.address);
-        previousStack();
-        previousStack();
-        program.writeInstruction("sta", stack.address);
-    }
-
-    override function visitArrayAssign(node:ArrayAssignNode) {
-        node.target.accept(this);
-        final targetAddress = stack.address;
-
-        node.value.accept(this);
-
-        previousStack();
-        program.writeInstruction("stt", targetAddress);
     }
 
     override function visitIf(node:IfNode) {

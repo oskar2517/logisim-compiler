@@ -8,6 +8,7 @@ class Output {
     public function new() {}
 
     public function writeInstruction(opCode:String, immediate:Any = null) {
+        buffer.add("    ");
         buffer.add(opCode);
         buffer.add(" ");
         if (immediate != null) {
@@ -18,6 +19,7 @@ class Output {
     }
 
     public function writeInteger(value:Int) {
+        buffer.add("    ");
         buffer.add(value);
         buffer.add("\r\n");
         length++;

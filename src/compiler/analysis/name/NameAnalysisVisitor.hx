@@ -57,4 +57,23 @@ class NameAnalysisVisitor extends BaseVisitor {
         node.consequence.accept(this);
         node.alternative.accept(this);
     }
+
+    override function visitArrayAccess(node:ArrayAccessNode) {
+        node.target.accept(this);
+        node.index.accept(this);
+    }
+
+    override function visitArrayAssign(node:ArrayAssignNode) {
+        node.target.accept(this);
+        node.value.accept(this);
+    }
+
+    override function visitVariableAccess(node:VariableAccessNode) {
+        node.value.accept(this);
+    }
+
+    override function visitWhile(node:WhileNode) {
+        node.condition.accept(this);
+        node.body.accept(this);
+    }
 }
