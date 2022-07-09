@@ -1,0 +1,7 @@
+var x;
+x = 2;
+var arr:0;
+
+arr[19] = 22; // Overwrite with 'lda 25' with 'lda 22'
+
+show 1;
