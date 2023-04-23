@@ -55,13 +55,10 @@ class CompilerVisitor extends BaseVisitor {
 
         fileOutput.writeOutput(constantPool.toAssembly());
 
-        program.writeInstruction("hlt");
         fileOutput.writeComment("--- program start ---");
         fileOutput.writeLabel("program");
         fileOutput.writeOutput(program);
         fileOutput.writeComment("--- program end ---");
-
-        trace(stack.address - stackOffset);
     }
 
     override function visitBlock(node:BlockNode) {
@@ -73,7 +70,7 @@ class CompilerVisitor extends BaseVisitor {
     override function visitShow(node:ShowNode) {
         node.expression.accept(this);
 
-        program.writeInstruction("lda", stack.address);
+        program.writeInstruction("ld", stack.address);
         previousStack();
         program.writeInstruction("mao");
     }
@@ -88,21 +85,17 @@ class CompilerVisitor extends BaseVisitor {
 
         switch (node.operation) {
             case Add:
-                program.writeInstruction("lda", s1.address);
+                program.writeInstruction("ld", s1.address);
                 program.writeInstruction("add", s2.address);
-                program.writeInstruction("sta", result.address);
+                program.writeInstruction("st", result.address);
             case Subtract:
-                program.writeInstruction("lda", s1.address);
+                program.writeInstruction("ld", s1.address);
                 program.writeInstruction("sub", s2.address);
-                program.writeInstruction("sta", result.address);
+                program.writeInstruction("st", result.address);
             case Multiply:
-                program.writeInstruction("lda", s1.address);
-                program.writeInstruction("mul", s2.address);
-                program.writeInstruction("sta", result.address);
+                throw "Multiplication not implemented!";
             case Divide:
-                program.writeInstruction("lda", s1.address);
-                program.writeInstruction("div", s2.address);
-                program.writeInstruction("sta", result.address);
+                throw "Division not implemented!";
             default: error('Operation ${node.operation} not supported in variable expressions.');
         }
 
@@ -113,8 +106,8 @@ class CompilerVisitor extends BaseVisitor {
         final address = constantPool.addConstant(node.value);
 
         nextStack();
-        program.writeInstruction("lda", address);
-        program.writeInstruction("sta", stack.address);
+        program.writeInstruction("ld", address);
+        program.writeInstruction("st", stack.address);
     }
 
     override function visitVariableAssign(node:VariableAssignNode) {
@@ -122,8 +115,8 @@ class CompilerVisitor extends BaseVisitor {
 
         final address = symbolTable.lookup(node.name);
 
-        program.writeInstruction("lda", stack.address);
-        program.writeInstruction("sta", address);
+        program.writeInstruction("ld", stack.address);
+        program.writeInstruction("st", address);
         previousStack();
     }
 
@@ -133,10 +126,10 @@ class CompilerVisitor extends BaseVisitor {
 
         node.index.accept(this);
 
-        program.writeInstruction("lda", targetAddress);
+        program.writeInstruction("ld", targetAddress);
         program.writeInstruction("add", stack.address);
         previousStack();
-        program.writeInstruction("sta", stack.address);
+        program.writeInstruction("st", stack.address);
     }
 
     override function visitArrayAssign(node:ArrayAssignNode) {
@@ -145,14 +138,14 @@ class CompilerVisitor extends BaseVisitor {
 
         node.value.accept(this);
 
-        program.writeInstruction("lda", stack.address);
+        program.writeInstruction("ld", stack.address);
         previousStack();
         previousStack();
-        program.writeInstruction("stt", targetAddress);
+        program.writeInstruction("str", targetAddress);
     }
 
     function generateCondition(expression:ExpressionNode, jumpLabel:Int) {
-        if (!(expression is BinaryExpressionNode)) {
+        if (!(expression is BinaryExpressionNode)) { // TODO: Move to analysis phase?
             error("If expected binary expression");
         }
 
@@ -166,21 +159,28 @@ class CompilerVisitor extends BaseVisitor {
 
         switch (binaryExpression.operation) {
             case Equals:
-                program.writeInstruction("lda", s1.address);
-                program.writeInstruction("cmp", s2.address);
-                program.writeInstruction("bre", 'L$jumpLabel');
+                program.writeInstruction("ld", s1.address);
+                program.writeInstruction("sub", s2.address);
+                program.writeInstruction("brz", 'L$jumpLabel');
             case NotEquals:
-                program.writeInstruction("lda", s1.address);
-                program.writeInstruction("cmp", s2.address);
-                program.writeInstruction("brn", 'L$jumpLabel');
+                final endLabel = labelIndex++;
+                program.writeInstruction("ld", s1.address);
+                program.writeInstruction("sub", s2.address);
+                program.writeInstruction("brz", 'L$endLabel');
+                program.writeInstruction("jmp", 'L$jumpLabel');
+                program.writeLabel('L${endLabel}');
             case GreaterThan:
-                program.writeInstruction("lda", s1.address);
-                program.writeInstruction("cmp", s2.address);
-                program.writeInstruction("brg", 'L$jumpLabel');
+                final endLabel = labelIndex++;
+                program.writeInstruction("ld", s1.address);
+                program.writeInstruction("sub", s2.address);
+                program.writeInstruction("brz", 'L$endLabel');
+                program.writeInstruction("brs", 'L$endLabel');
+                program.writeInstruction("jmp", 'L$jumpLabel');
+                program.writeLabel('L$endLabel');
             case LessThan:
-                program.writeInstruction("lda", s1.address);
-                program.writeInstruction("cmp", s2.address);
-                program.writeInstruction("brl", 'L$jumpLabel');
+                program.writeInstruction("ld", s1.address);
+                program.writeInstruction("sub", s2.address);
+                program.writeInstruction("brs", 'L$jumpLabel');
             default: error('Operation ${binaryExpression.operation} not supported in conditions.');
         }
 
@@ -192,15 +192,15 @@ class CompilerVisitor extends BaseVisitor {
         final address = symbolTable.lookup(node.name);
 
         nextStack();
-        program.writeInstruction("lda", constantPool.addConstant(address));
-        program.writeInstruction("sta", stack.address);
+        program.writeInstruction("ld", constantPool.addConstant(address));
+        program.writeInstruction("st", stack.address);
     }
 
     override function visitVariableAccess(node:VariableAccessNode) {
         node.value.accept(this);
 
-        program.writeInstruction("ldd", stack.address);
-        program.writeInstruction("sta", stack.address);
+        program.writeInstruction("ldr", stack.address);
+        program.writeInstruction("st", stack.address);
     }
 
     override function visitIf(node:IfNode) {
@@ -231,6 +231,6 @@ class CompilerVisitor extends BaseVisitor {
     }
 
     override function visitExit(node:ExitNode) {
-        program.writeInstruction("hlt");
+        throw "Exit not implemented!";
     }
 }
